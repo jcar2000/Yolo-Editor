@@ -50,16 +50,28 @@ def rename_file(dataset_dir, old_image_name, new_image_name, image_labels):
 def rename_class_in_labels(dataset_dir, class_index, new_class_name, classes):
     labels_dir = os.path.join(dataset_dir, 'labels')
     for label_file in os.listdir(labels_dir):
-        if label_file.endswith('.txt'):
-            label_path = os.path.join(labels_dir, label_file)
-            with open(label_path, 'r') as file:
-                lines = file.readlines()
-            with open(label_path, 'w') as file:
-                for line in lines:
-                    parts = line.split()
-                    if int(parts[0]) == class_index:
-                        parts[0] = str(classes.index(new_class_name))
-                    file.write(' '.join(parts) + '\n')
+        label_path = os.path.join(labels_dir, label_file)
+        with open(label_path, 'r') as file:
+            lines = file.readlines()
+        with open(label_path, 'w') as file:
+            for line in lines:
+                parts = line.split()
+                if int(parts[0]) == class_index:
+                    parts[0] = str(classes.index(new_class_name))
+                file.write(' '.join(parts) + '\n')
+
+def merge_classes_in_labels(dataset_dir, old_class_index, new_class_index):
+    labels_dir = os.path.join(dataset_dir, 'labels')
+    for label_file in os.listdir(labels_dir):
+        label_path = os.path.join(labels_dir, label_file)
+        with open(label_path, 'r') as file:
+            lines = file.readlines()
+        with open(label_path, 'w') as file:
+            for line in lines:
+                parts = line.split()
+                if int(parts[0]) == old_class_index:
+                    parts[0] = str(new_class_index)
+                file.write(' '.join(parts) + '\n')
 
 def update_yaml(yaml_path, classes):
     with open(yaml_path, 'r') as file:

@@ -127,6 +127,7 @@ class ImageViewer:
             self.new_bbox_start = (event.x, event.y)
         else:
             self.pan_start = (event.x, event.y)
+            self.canvas.scan_mark(event.x, event.y)
 
     def on_mouse_drag(self, event):
         if self.drawing_bbox and self.new_bbox_start is not None:
@@ -135,13 +136,8 @@ class ImageViewer:
             x2, y2 = event.x, event.y
             self.canvas.create_rectangle(x1, y1, x2, y2, outline="blue", tags="new_bbox")
         elif self.pan_start is not None:
-            x_diff = event.x - self.pan_start[0]
-            y_diff = event.y - self.pan_start[1]
-            self.canvas.move(self.image_on_canvas, x_diff, y_diff)
-            self.canvas.move("bbox", x_diff, y_diff)
-            self.pan_offset[0] += x_diff
-            self.pan_offset[1] += y_diff
-            self.pan_start = (event.x, event.y)
+            self.canvas.scan_dragto(event.x, event.y, gain=1)
+            self.update_pan_offset(event)
 
     def on_left_button_release(self, event):
         if self.drawing_bbox and self.new_bbox_start is not None:
@@ -151,6 +147,15 @@ class ImageViewer:
             self.select_class(bbox)
             self.drawing_bbox = False
             self.new_bbox_start = None
+        self.pan_start = None  # Reset pan start to avoid sticky pan
+
+    def update_pan_offset(self, event):
+        if self.pan_start is not None:
+            x_diff = event.x - self.pan_start[0]
+            y_diff = event.y - self.pan_start[1]
+            self.pan_offset[0] += x_diff
+            self.pan_offset[1] += y_diff
+            self.pan_start = (event.x, event.y)
 
     def start_drawing_bbox(self):
         self.drawing_bbox = True
@@ -189,16 +194,18 @@ class ImageViewer:
     def draw_bboxes(self):
         self.canvas.delete("bbox")
         img_width, img_height = self.img.size
+        canvas_coords = self.canvas.coords(self.image_on_canvas)
+        canvas_x, canvas_y = canvas_coords[0], canvas_coords[1]
         for label in self.labels:
             parts = label.split()
             if len(parts) > 1:
                 class_id, bbox = int(parts[0]), list(map(float, parts[1:]))
                 if len(bbox) == 4:
                     x_center, y_center, width, height = bbox
-                    x1 = (x_center - width / 2) * img_width * self.zoom_level + self.pan_offset[0]
-                    y1 = (y_center - height / 2) * img_height * self.zoom_level + self.pan_offset[1]
-                    x2 = (x_center + width / 2) * img_width * self.zoom_level + self.pan_offset[0]
-                    y2 = (y_center + height / 2) * img_height * self.zoom_level + self.pan_offset[1]
+                    x1 = (x_center - width / 2) * img_width * self.zoom_level + canvas_x
+                    y1 = (y_center - height / 2) * img_height * self.zoom_level + canvas_y
+                    x2 = (x_center + width / 2) * img_width * self.zoom_level + canvas_x
+                    y2 = (y_center + height / 2) * img_height * self.zoom_level + canvas_y
                     if x1 < x2 and y1 < y2:  # Ensure valid coordinates
                         self.canvas.create_rectangle(x1, y1, x2, y2, outline="red", tags="bbox")
                         self.canvas.create_text(x1, y1, anchor=tk.NW, text=self.manager.classes[class_id], fill="red", tags="bbox")
@@ -214,6 +221,7 @@ class ImageViewer:
         self.labels = [lbl for lbl in self.labels if lbl != label]
         self.changes_made = True  # Mark changes as made
         self.draw_bboxes()
+        self.pan_start = None  # Reset pan start to avoid sticky pan
 
     def change_bbox_class(self, label):
         top = tk.Toplevel(self.window)

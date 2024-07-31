@@ -6,7 +6,7 @@ from classes.DatasetLoader import DatasetLoader
 from classes.ImageDisplayManager import ImageDisplayManager
 from classes.StatsManager import StatsManager
 from utils.show_graph import show_class_annotations_graph
-from utils.file_utils import delete_files, rename_file, rename_class_in_labels, update_yaml
+from utils.file_utils import delete_files, rename_file, rename_class_in_labels, update_yaml, merge_classes_in_labels
 
 class YOLODatasetManager:
     def __init__(self, root):
@@ -148,6 +148,8 @@ class YOLODatasetManager:
                             parts[0] = str(merge_class_index)
                         updated_labels.append(' '.join(parts))
                     self.image_labels[image] = updated_labels
+                merge_classes_in_labels(self.dataset_dir, selected_class_index[0], merge_class_index)
+                self.classes.pop(selected_class_index[0])
             else:
                 # Rename the class
                 self.classes[selected_class_index[0]] = new_class_name
