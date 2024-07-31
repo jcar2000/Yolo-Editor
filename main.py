@@ -42,8 +42,8 @@ class YOLODatasetManager:
         self.progress = ttk.Progressbar(self.left_frame, orient=HORIZONTAL, mode='determinate')
         self.progress.pack(fill=tk.X, padx=5, pady=5)
 
-        self.class_listbox = tk.Listbox(self.left_frame, selectmode=tk.SINGLE, height=1)
-        self.class_listbox.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self.class_listbox = tk.Listbox(self.left_frame, selectmode=tk.SINGLE, height=10)
+        self.class_listbox.pack(fill=tk.BOTH, expand=False, padx=5, pady=5)
         self.class_listbox.bind('<<ListboxSelect>>', self.image_display_manager.display_class_images)
 
         self.filter_frame = tk.Frame(self.left_frame)
@@ -81,13 +81,15 @@ class YOLODatasetManager:
         self.img_label = tk.Label(self.right_frame)
         self.right_frame.add(self.img_label, height=600)
 
+        self.view_image_btn = tk.Button(self.img_label, text="Image Viewer", command=self.image_display_manager.open_image_viewer)
+        self.view_image_btn.place(relx=1.0, rely=1.0, anchor='se', x=-10, y=-10)
+
         self.stats_frame = tk.Frame(self.right_frame)
         self.right_frame.add(self.stats_frame)
 
         self.stats_text = tk.Text(self.stats_frame, wrap=tk.WORD)
         self.stats_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        # Button to show the class annotations graph
         self.show_graph_btn = tk.Button(self.right_frame, text="Show Class Annotations Graph", command=self.show_graph)
         self.show_graph_btn.place(relx=1.0, rely=1.0, anchor='se', x=-10, y=-10)
 
@@ -134,9 +136,23 @@ class YOLODatasetManager:
             return
         old_class_name = self.classes[selected_class_index[0]]
         new_class_name = simpledialog.askstring("Rename Class", f"Enter new name for class '{old_class_name}':", parent=self.root)
-        if new_class_name and new_class_name not in self.classes:
-            self.classes[selected_class_index[0]] = new_class_name
-            rename_class_in_labels(self.dataset_dir, old_class_name, new_class_name, self.classes)
+        if new_class_name:
+            if new_class_name in self.classes:
+                merge_class_index = self.classes.index(new_class_name)
+                # Merge and remap images to the existing class
+                for image, labels in self.image_labels.items():
+                    updated_labels = []
+                    for label in labels:
+                        parts = label.split()
+                        if int(parts[0]) == selected_class_index[0]:
+                            parts[0] = str(merge_class_index)
+                        updated_labels.append(' '.join(parts))
+                    self.image_labels[image] = updated_labels
+            else:
+                # Rename the class
+                self.classes[selected_class_index[0]] = new_class_name
+                rename_class_in_labels(self.dataset_dir, selected_class_index[0], new_class_name, self.classes)
+            
             update_yaml(os.path.join(self.dataset_dir, 'data.yaml'), self.classes)
             self.update_class_listbox()
             self.stats_manager.update_stats()
@@ -146,8 +162,10 @@ class YOLODatasetManager:
         if not selected_item:
             return
         old_image_name = self.image_listbox.item(selected_item, 'text')
-        new_image_name = simpledialog.askstring("Rename Image", f"Enter new name for image '{old_image_name}':", parent=self.root)
-        if new_image_name and new_image_name not in self.images:
+        file_extension = os.path.splitext(old_image_name)[1]  # Get the file extension (e.g., .jpg, .png)
+        new_image_base_name = simpledialog.askstring("Rename Image", f"Enter new name for image '{old_image_name}':", parent=self.root)
+        if new_image_base_name and f"{new_image_base_name}{file_extension}" not in self.images:
+            new_image_name = f"{new_image_base_name}{file_extension}"  # Append the file extension to the new name
             rename_file(self.dataset_dir, old_image_name, new_image_name, self.image_labels)
             self.images[self.images.index(old_image_name)] = new_image_name
             self.image_icons[new_image_name] = self.image_icons.pop(old_image_name)

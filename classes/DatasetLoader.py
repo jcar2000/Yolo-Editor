@@ -22,7 +22,7 @@ class DatasetLoader:
 
     def load_dataset_thread(self):
         self.load_yaml()
-        self.load_images_and_labels()
+        self.load_images_and_labels_dir()
         self.manager.load_classes()
         self.manager.stats_manager.update_stats()
         self.manager.update_class_listbox() 
@@ -35,7 +35,7 @@ class DatasetLoader:
 
         self.manager.classes = load_yaml(yaml_path)
 
-    def load_images_and_labels(self):
+    def load_images_and_labels_dir(self):
         images_dir = os.path.join(self.manager.dataset_dir, 'images')
         labels_dir = os.path.join(self.manager.dataset_dir, 'labels')
 

@@ -24,17 +24,17 @@ def load_images_and_labels(images_dir, labels_dir):
 
     return images, image_labels
 
+def truncate_name(name, max_length):
+    if len(name) > max_length:
+        return name[:max_length-3] + '...'
+    return name
+
 def delete_files(image_paths, label_paths):
     for img_path, label_path in zip(image_paths, label_paths):
         if os.path.exists(img_path):
             os.remove(img_path)
         if os.path.exists(label_path):
             os.remove(label_path)
-
-def truncate_name(name, max_length):
-    if len(name) > max_length:
-        return name[:max_length-3] + '...'
-    return name
 
 def rename_file(dataset_dir, old_image_name, new_image_name, image_labels):
     old_img_path = os.path.join(dataset_dir, 'images', old_image_name)
@@ -47,12 +47,8 @@ def rename_file(dataset_dir, old_image_name, new_image_name, image_labels):
 
     image_labels[new_image_name] = image_labels.pop(old_image_name)
 
-def rename_class_in_labels(dataset_dir, old_class_name, new_class_name, classes):
+def rename_class_in_labels(dataset_dir, class_index, new_class_name, classes):
     labels_dir = os.path.join(dataset_dir, 'labels')
-    print(old_class_name)
-    print(classes)
-    class_index = classes.index(old_class_name)
-    new_class_index = classes.index(new_class_name)
     for label_file in os.listdir(labels_dir):
         if label_file.endswith('.txt'):
             label_path = os.path.join(labels_dir, label_file)
@@ -62,7 +58,7 @@ def rename_class_in_labels(dataset_dir, old_class_name, new_class_name, classes)
                 for line in lines:
                     parts = line.split()
                     if int(parts[0]) == class_index:
-                        parts[0] = str(new_class_index)
+                        parts[0] = str(classes.index(new_class_name))
                     file.write(' '.join(parts) + '\n')
 
 def update_yaml(yaml_path, classes):
