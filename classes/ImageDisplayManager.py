@@ -199,9 +199,10 @@ class ImageViewer:
                     y1 = (y_center - height / 2) * img_height * self.zoom_level + self.pan_offset[1]
                     x2 = (x_center + width / 2) * img_width * self.zoom_level + self.pan_offset[0]
                     y2 = (y_center + height / 2) * img_height * self.zoom_level + self.pan_offset[1]
-                    self.canvas.create_rectangle(x1, y1, x2, y2, outline="red", tags="bbox")
-                    self.canvas.create_text(x1, y1, anchor=tk.NW, text=self.manager.classes[class_id], fill="red", tags="bbox")
-                    self.canvas.tag_bind("bbox", "<Button-1>", lambda event, lbl=label: self.on_bbox_click(event, lbl))
+                    if x1 < x2 and y1 < y2:  # Ensure valid coordinates
+                        self.canvas.create_rectangle(x1, y1, x2, y2, outline="red", tags="bbox")
+                        self.canvas.create_text(x1, y1, anchor=tk.NW, text=self.manager.classes[class_id], fill="red", tags="bbox")
+                        self.canvas.tag_bind("bbox", "<Button-1>", lambda event, lbl=label: self.on_bbox_click(event, lbl))
 
     def on_bbox_click(self, event, label):
         menu = tk.Menu(self.window, tearoff=0)
